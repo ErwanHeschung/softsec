@@ -1,0 +1,6 @@
+
+*.o
+sectrans
+server
+/client_files
+/server_files
