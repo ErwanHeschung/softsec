@@ -7,17 +7,20 @@
 #define INITIAL_BUFFER_SIZE 1024
 #define PATH_BUFFER_SIZE 1035
 
-int send_file(char *filename, int port) {
+int send_file(char *filename, int port)
+{
   FILE *file = fopen(filename, "rb");
   printf("Sending file %s\n", filename);
-  if (file == NULL) {
+  if (file == NULL)
+  {
     printf("File not found\n");
     return -1;
   }
 
   char buffer[1024] = {0};
 
-  while (!feof(file)) {
+  while (!feof(file))
+  {
     fread(buffer, 1024, 1, file);
     sndmsg(buffer, port);
     memset(buffer, 0, sizeof(buffer));
@@ -29,20 +32,31 @@ int send_file(char *filename, int port) {
   return 0;
 }
 
-int receive_file(char *filename, char *dest_dir) {
+int receive_file(char *filename, char *dest_dir)
+{
   char full_path[1024];
-  sprintf(full_path, "%s/%s", dest_dir, filename);
+  if (dest_dir[0] == '.')
+  {
+    snprintf(full_path, 1024, "%s", filename);
+  }
+  else
+  {
+    sprintf(full_path, "%s/%s", dest_dir, filename);
+  }
   FILE *file = fopen(full_path, "wb");
   printf("Receiving file %s\n", full_path);
-  if (file == NULL) {
+  if (file == NULL)
+  {
     printf("File not found\n");
     return -1;
   }
 
   char buffer[1024] = {0};
-  while (1) {
+  while (1)
+  {
     getmsg(buffer);
-    if (strncmp(buffer, "EOF", 3) == 0) {
+    if (strncmp(buffer, "EOF", 3) == 0)
+    {
       break;
     }
     fwrite(buffer, strlen(buffer), 1, file);
@@ -51,17 +65,20 @@ int receive_file(char *filename, char *dest_dir) {
   return 0;
 }
 
-int send_string(char *str, int port) {
+int send_string(char *str, int port)
+{
   char buffer[1024] = {0};
   snprintf(buffer, 1024, "%s", str);
   sndmsg(buffer, port);
   return 0;
 }
 
-char *list_all_files_on_server() {
+char *list_all_files_on_server()
+{
   size_t buffer_size = INITIAL_BUFFER_SIZE;
   char *file = malloc(buffer_size);
-  if (file == NULL) {
+  if (file == NULL)
+  {
     printf("Memory allocation failed :( \n");
     exit(1);
   }
@@ -71,18 +88,24 @@ char *list_all_files_on_server() {
   char path[PATH_BUFFER_SIZE];
   char *command = "ls server_files";
   fp = popen(command, "r");
-  if (fp == NULL) {
+  if (fp == NULL)
+  {
     printf("Failed to run command\n");
     free(file);
     exit(1);
   }
 
-  while (fgets(path, sizeof(path) - 1, fp) != NULL) {
+  int files_found = 0;
+  while (fgets(path, sizeof(path) - 1, fp) != NULL)
+  {
+    files_found = 1;
     size_t new_length = strlen(file) + strlen(path) + 1;
-    if (new_length > buffer_size) {
+    if (new_length > buffer_size)
+    {
       buffer_size *= 2;
       char *new_file = realloc(file, buffer_size);
-      if (new_file == NULL) {
+      if (new_file == NULL)
+      {
         printf("Memory reallocation failed\n");
         free(file);
         pclose(fp);
@@ -93,5 +116,18 @@ char *list_all_files_on_server() {
     strcat(file, path);
   }
   pclose(fp);
+
+  if (!files_found)
+  {
+    strcpy(file, "No files found in the server_files directory.\n");
+  }
+
   return file;
+}
+
+void delete_file_client(char *filename)
+{
+  char command[1024];
+  snprintf(command, 1024, "rm %s", filename);
+  system(command);
 }

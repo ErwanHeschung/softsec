@@ -4,3 +4,7 @@ sectrans
 server
 /client_files
 /server_files
+/.vscode
+/signatures
+client_key.bin
+/.vscode

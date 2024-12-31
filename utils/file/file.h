@@ -9,4 +9,6 @@ int send_string(char *str, int port);
 
 char *list_all_files_on_server();
 
+void delete_file_client(char *filename);
+
 #endif
