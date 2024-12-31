@@ -25,12 +25,14 @@ int main(int agrc, char *argv[]){
                 receive_file(filename, "server_files");
                 break;
             case DOWNLOAD:
-                char *dest_dir = "server_files";    
+                char *dest_dir = "server_files";
                 char full_path[1024];
                 sprintf(full_path, "%s/%s", dest_dir, filename);
                 send_file(full_path, 4200);
                 break;
             case LIST:
+                send_string(list_all_files_on_server(), 4200);
+                break;
             default:
                 break;
         }

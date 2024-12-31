@@ -29,7 +29,7 @@ Param get_param(int argc, char *argv[])
         }
         return DOWNLOAD;
     }
-    else if (strcmp(argv[1], "6list") == 0)
+    else if (strcmp(argv[1], "-list") == 0)
     {
         if (argc != 2)
         {

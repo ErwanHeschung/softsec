@@ -22,14 +22,16 @@ int main(int agrc, char *argv[]){
         }
         break;
     case DOWNLOAD:
-        //down
         snprintf(buffer, 1024, "-down %s", argv[2]);
         sndmsg(buffer, 8080);
         printf("Downloading file: %s\n", argv[2]);
         receive_file(argv[2], "client_files");
         break;
     case LIST:
-        printf("List\n");
+        snprintf(buffer, 1024, "-list");
+        sndmsg(buffer, 8080);
+        getmsg(buffer);
+        printf("%s\n", buffer);
         break;
     default:
         break;
