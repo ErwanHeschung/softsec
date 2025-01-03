@@ -7,7 +7,7 @@ Param get_param(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        printf("Usage: %s -[up|down|list] [file]\n", argv[0]);
+        printf("Usage: %s\n -[up|down] [file]\n -login [username] [password]\n -signup [username] [password]\n -list\n", argv[0]);
         exit(1);
     }
 
@@ -36,11 +36,29 @@ Param get_param(int argc, char *argv[])
             printf("Usage: %s -list\n", argv[0]);
             exit(1);
         }
-        return LIST;
+        return LISTFILES;
+    }
+    else if (strcmp(argv[1], "-login") == 0)
+    {
+        if (argc != 4)
+        {
+            printf("Usage: %s -login [username] [password]\n", argv[0]);
+            exit(1);
+        }
+        return LOGIN;
+    }
+    else if (strcmp(argv[1], "-signup") == 0)
+    {
+        if (argc != 4)
+        {
+            printf("Usage: %s -signup [username] [password]\n", argv[0]);
+            exit(1);
+        }
+        return SIGNUP;
     }
     else
     {
-        printf("Usage: %s -[up|down|list] [file]\n", argv[0]);
+        printf("Usage: %s\n -[up|down] [file]\n -login [username] [password]\n -signup [username] [password]\n -list\n", argv[0]);
         exit(1);
     }
 }
@@ -57,7 +75,19 @@ Param get_param_from_string(char *param)
     }
     else if (strcmp(param, "-list") == 0)
     {
-        return LIST;
+        return LISTFILES;
+    }
+    else if (strcmp(param, "-login") == 0)
+    {
+        return LOGIN;
+    }
+    else if (strcmp(param, "-signup") == 0)
+    {
+        return SIGNUP;
+    }
+    else if (strcmp(param, "-check") == 0)
+    {
+        return CHECK;
     }
     else
     {

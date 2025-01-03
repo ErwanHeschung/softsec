@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+
+  db:
+    image: mysql:latest
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'sectrans'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'YZT-tqk4zwd*awz9muk'
+      MYSQL_ROOT_PASSWORD: 'xtk0kwx.htv7bgw8ANP'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - msql:/var/lib/mysql
+    networks:
+      - db_network
+
+networks:
+  db_network:
+
+volumes:
+  msql:

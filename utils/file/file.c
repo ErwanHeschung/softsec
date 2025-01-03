@@ -73,58 +73,6 @@ int send_string(char *str, int port)
   return 0;
 }
 
-char *list_all_files_on_server()
-{
-  size_t buffer_size = INITIAL_BUFFER_SIZE;
-  char *file = malloc(buffer_size);
-  if (file == NULL)
-  {
-    printf("Memory allocation failed :( \n");
-    exit(1);
-  }
-  file[0] = '\0';
-
-  FILE *fp;
-  char path[PATH_BUFFER_SIZE];
-  char *command = "ls server_files";
-  fp = popen(command, "r");
-  if (fp == NULL)
-  {
-    printf("Failed to run command\n");
-    free(file);
-    exit(1);
-  }
-
-  int files_found = 0;
-  while (fgets(path, sizeof(path) - 1, fp) != NULL)
-  {
-    files_found = 1;
-    size_t new_length = strlen(file) + strlen(path) + 1;
-    if (new_length > buffer_size)
-    {
-      buffer_size *= 2;
-      char *new_file = realloc(file, buffer_size);
-      if (new_file == NULL)
-      {
-        printf("Memory reallocation failed\n");
-        free(file);
-        pclose(fp);
-        exit(1);
-      }
-      file = new_file;
-    }
-    strcat(file, path);
-  }
-  pclose(fp);
-
-  if (!files_found)
-  {
-    strcpy(file, "No files found in the server_files directory.\n");
-  }
-
-  return file;
-}
-
 void delete_file_client(char *filename)
 {
   char command[1024];

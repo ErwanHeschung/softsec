@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "client.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "param.h": "c",
+        "key_manager.h": "c",
+        "database.h": "c",
+        "time.h": "c"
     }
 }

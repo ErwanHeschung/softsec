@@ -10,6 +10,8 @@
 
 #define AES_KEY_LENGTH 32 // 256-bit AES key
 #define AES_IV_LENGTH 16  // 128-bit IV
+#define SALT_SIZE 16
+#define HASH_SIZE 32 // SHA256 produces 32-byte hashes
 
 unsigned char *get_or_generate_keys()
 {
@@ -81,10 +83,14 @@ void encrypt_file(const char *filename, unsigned char *aes_key)
   fclose(output);
 }
 
-void decrypt_file(const char *filename, unsigned char *aes_key)
+void decrypt_file(const char *filename, unsigned char *aes_key, const char *output_filename)
 {
   FILE *input = fopen(filename, "rb");
-  FILE *output = fopen("client_files/decrypted_file.txt", "wb");
+  char *path = "client_files/";
+  char *output_filename_with_path = malloc(strlen(path) + strlen(output_filename) + 1);
+  strcpy(output_filename_with_path, path);
+  strcat(output_filename_with_path, output_filename);
+  FILE *output = fopen(output_filename_with_path, "wb");
   unsigned char iv[AES_IV_LENGTH];
   unsigned char buffer[1024];
   unsigned char plaintext[1024];
@@ -190,4 +196,183 @@ int verify_signature(const char *filename, const char *sig_filename)
   fclose(sig_file);
 
   return memcmp(md5_digest, expected_md5_digest, expected_md5_digest_len) == 0;
+}
+
+unsigned char *get_db_user_token(char *username)
+{
+  FILE *token_file = fopen("user_token.bin", "rb");
+
+  if (token_file)
+  {
+    char line[256];
+    while (fgets(line, sizeof(line), token_file))
+    {
+      char *user = strtok(line, ":");
+      char *token = strtok(NULL, ":");
+      if (token != NULL)
+      {
+        size_t len = strlen(token);
+        if (len > 0 && token[len - 1] == '\n')
+        {
+          token[len - 1] = '\0';
+        }
+      }
+      if (strcmp(user, username) == 0)
+      {
+        fclose(token_file);
+        return (unsigned char *)strdup(token);
+      }
+    }
+    fclose(token_file);
+  }
+
+  return NULL;
+}
+
+int write_token_to_file(unsigned char *token, char *username)
+{
+  FILE *token_file = fopen("user_token.bin", "w");
+
+  if (token_file)
+  {
+    fprintf(token_file, "%s:%s\n", username, token);
+    fclose(token_file);
+  }
+  else
+  {
+    fprintf(stderr, "Error opening token file for writing.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  return 1;
+}
+
+char *get_db_username()
+{
+  FILE *token_file = fopen("user_token.bin", "rb");
+
+  if (token_file)
+  {
+    char line[256];
+    while (fgets(line, sizeof(line), token_file))
+    {
+      char *user = strtok(line, ":");
+      char *token = strtok(NULL, ":");
+      return strdup(user);
+    }
+    fclose(token_file);
+  }
+
+  return NULL;
+}
+
+int generate_salt(unsigned char *salt, size_t size)
+{
+  if (!salt || size == 0)
+    return 0;
+  return RAND_bytes(salt, size);
+}
+
+char *hash_password(const char *password, unsigned char *salt)
+{
+  if (!password || !salt)
+    return NULL;
+
+  unsigned char hash[HASH_SIZE];
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (!ctx)
+  {
+    perror("Failed to create hash context");
+    return NULL;
+  }
+
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1)
+  {
+    perror("Failed to initialize hash function");
+    EVP_MD_CTX_free(ctx);
+    return NULL;
+  }
+
+  if (EVP_DigestUpdate(ctx, salt, SALT_SIZE) != 1)
+  {
+    perror("Failed to hash salt");
+    EVP_MD_CTX_free(ctx);
+    return NULL;
+  }
+
+  if (EVP_DigestUpdate(ctx, password, strlen(password)) != 1)
+  {
+    perror("Failed to hash password");
+    EVP_MD_CTX_free(ctx);
+    return NULL;
+  }
+
+  if (EVP_DigestFinal_ex(ctx, hash, NULL) != 1)
+  {
+    perror("Failed to finalize hash");
+    EVP_MD_CTX_free(ctx);
+    return NULL;
+  }
+
+  EVP_MD_CTX_free(ctx);
+
+  char *result = (char *)malloc((SALT_SIZE + HASH_SIZE) * 2 + 1);
+  if (!result)
+  {
+    perror("Failed to allocate memory for hash result");
+    return NULL;
+  }
+
+  for (int i = 0; i < SALT_SIZE; i++)
+  {
+    sprintf(result + i * 2, "%02x", salt[i]);
+  }
+
+  for (int i = 0; i < HASH_SIZE; i++)
+  {
+    sprintf(result + (SALT_SIZE + i) * 2, "%02x", hash[i]);
+  }
+
+  result[(SALT_SIZE + HASH_SIZE) * 2] = '\0';
+  return result;
+}
+
+int verify_password(const char *password, const char *stored_hash)
+{
+  if (!password || !stored_hash)
+    return 0;
+
+  unsigned char salt[SALT_SIZE];
+  for (int i = 0; i < SALT_SIZE; i++)
+  {
+    sscanf(stored_hash + i * 2, "%2hhx", &salt[i]);
+  }
+
+  char *calculated_hash = hash_password(password, salt);
+  if (!calculated_hash)
+    return 0;
+
+  int result = (strcmp(calculated_hash, stored_hash) == 0);
+  free(calculated_hash);
+
+  return result;
+}
+
+char *enc_password(char *password)
+{
+  unsigned char salt[SALT_SIZE];
+  if (!generate_salt(salt, SALT_SIZE))
+  {
+    perror("Failed to generate salt");
+    return NULL;
+  }
+
+  char *hashed_password = hash_password(password, salt);
+  if (!hashed_password)
+  {
+    printf("Failed to hash password\n");
+    return NULL;
+  }
+
+  return hashed_password;
 }

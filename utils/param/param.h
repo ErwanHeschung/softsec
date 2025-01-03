@@ -5,7 +5,10 @@ typedef enum
 {
     UPLOAD,
     DOWNLOAD,
-    LIST
+    LISTFILES,
+    LOGIN,
+    SIGNUP,
+    CHECK
 } Param;
 
 Param get_param(int argc, char *argv[]);

@@ -8,3 +8,5 @@ server
 /signatures
 client_key.bin
 /.vscode
+user_token.bin
+/.vscode
